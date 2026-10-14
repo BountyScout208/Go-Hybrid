@@ -24,6 +24,14 @@ def audit(hyb, prog):
         [hyb, "check", prog, "--json", "--report-managed"],
         capture_output=True, text=True, timeout=120,
     )
+    # Fail closed on a checker failure (issue #53): a rejected or malformed
+    # program has no trustworthy managed-block inventory. Treating that as
+    # "zero blocks" reported PASS and — in --rebaseline mode — could replace
+    # a reviewed baseline with an empty one. The gate must stop instead; the
+    # rebaseline path flows through this same audit() call.
+    if r.returncode != 0:
+        print(f"GATE ERROR: {prog}: hyb check exited {r.returncode}; no gate decision on a failed check\n{r.stderr}")
+        sys.exit(2)
     try:
         out = json.loads(r.stdout)
     except json.JSONDecodeError:
@@ -43,9 +51,21 @@ def audit(hyb, prog):
         for ln, text in enumerate(f, 1):
             if "managed(" in text and "//" not in text.split("managed(")[0][-2:]:
                 lines.append(ln)
+    # Never guess a location or collapse several reports into a shared `?`
+    # key. That can hide an inserted block when a later block overwrites it.
+    # The current baseline format requires one unambiguous block per line;
+    # fail closed when the lightweight source scan cannot establish that.
+    if len(lines) != len(blocks):
+        print(
+            f"GATE ERROR: {prog}: {len(blocks)} reported managed block(s) "
+            f"but {len(lines)} source location(s); cannot pair them uniquely. "
+            "Put each managed block on its own line and check for source "
+            "mentions that confuse the scan before rebaselining."
+        )
+        sys.exit(2)
     keyed = {}
     for i, b in enumerate(blocks):
-        key = f"{prog}:{lines[i] if i < len(lines) else '?'}"
+        key = f"{prog}:{lines[i]}"
         keyed[key] = b
     return keyed
 

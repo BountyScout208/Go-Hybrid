@@ -113,7 +113,7 @@ cat > "$BIN_DIR/hyb" <<LAUNCH
 # Hybrid launcher (installed by install.sh) — wires the packaged runtime.
 HYB_HOME="$INSTALL_DIR"
 [ -n "\${HYB_INSTALL_DIR:-}" ] && HYB_HOME="\$HYB_INSTALL_DIR"
-export HYB_RUNTIME_DIR="\$HYB_HOME/runtime"
+export HYB_RUNTIME_DIR="\${HYB_RUNTIME_DIR:-\$HYB_HOME/runtime}"
 exec "\$HYB_HOME/bin/hyb" "\$@"
 LAUNCH
 chmod +x "$BIN_DIR/hyb"

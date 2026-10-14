@@ -80,7 +80,7 @@ The Tier-0 checker is **fail-closed at critical boundaries** (rule FC, O4.9):
   rejected (`HYB-E3001`/`E3002`/`E3005`) with diagnostics that name the value
   and teach the fix: ascribe the type, route through a channel, or take the
   hatch knowingly.
-- **Nothing silently passes.** The escape hatch — `managed { ... }` — is
+- **Nothing silently passes.** The escape hatch — `managed("reason", "category") { ... }` — is
   explicit, linted, greppable, and counted by `--report-managed`; CI can
   forbid it entirely with `--deny-managed`.
 - Boundary statements **inside closures** are checked too; Go-API escapes
